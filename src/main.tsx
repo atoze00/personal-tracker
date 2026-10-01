@@ -1,3 +1,4 @@
+import { InstallButton } from './components/InstallButton';
 import { MonthlyHabitTracker } from './components/MonthlyHabitTracker';
 import { ThemeSwitch } from './components/ThemeSwitch';
 import { DateNavigation } from './components/DateNavigation';
@@ -33,7 +34,7 @@ function App() {
     } catch {
         return { data: initialData(), raw: null, error: lockMessage };
     } });
-    const [data, setData] = useState(loaded.data), [error, setError] = useState(loaded.error), [saved, setSaved] = useState(true), [today, setToday] = useState(() => new Date()), [week, setWeek] = useState(() => monday(new Date())), [editing, setEditing] = useState<Habit | null | undefined>(undefined), [install, setInstall] = useState<any>(null);
+    const [data, setData] = useState(loaded.data), [error, setError] = useState(loaded.error), [saved, setSaved] = useState(true), [today, setToday] = useState(() => new Date()), [week, setWeek] = useState(() => monday(new Date())), [editing, setEditing] = useState<Habit | null | undefined>(undefined);
     const [view, setView] = useState<'weekly' | 'monthly'>('weekly');
     const [month, setMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
     const [selected, setSelected] = useState(() => new Date());
@@ -108,7 +109,7 @@ function App() {
         setWeek(w => dateKey(w) === dateKey(monday(new Date(previous + 'T12:00:00'))) ? monday(now) : w);
         previous = dateKey(now);
         setToday(now);
-    } }; const t = setInterval(check, 15000); window.addEventListener('focus', check); const prompt = (e: Event) => { e.preventDefault(); setInstall(e); }; window.addEventListener('beforeinstallprompt', prompt); return () => { clearInterval(t); window.removeEventListener('focus', check); window.removeEventListener('beforeinstallprompt', prompt); }; }, []);
+    } }; const t = setInterval(check, 15000); window.addEventListener('focus', check); return () => { clearInterval(t); window.removeEventListener('focus', check); }; }, []);
     useEffect(() => {
         const refresh = () => {
             try {
@@ -121,7 +122,7 @@ function App() {
         window.addEventListener('focus', refresh);
         return () => { window.removeEventListener('storage', sync); window.removeEventListener('focus', refresh); };
     }, []);
-    return <main className={'shell' + (view === 'monthly' ? ' monthly-shell' : '')}><header className="app-header"><div className="brand"><span className="brand-mark"><i /><i /><i /><i /></span><h1>개인 트래커</h1></div><div className="header-right">{install && <button className="text-button" onClick={async () => { await install.prompt(); setInstall(null); }}>앱 설치</button>}<span>{today.getFullYear()}.{String(today.getMonth() + 1).padStart(2, '0')}.{String(today.getDate()).padStart(2, '0')} <b>{weekdays[(today.getDay() + 6) % 7]}요일</b></span><span inert={locked || undefined}><ThemeSwitch/></span></div></header>
+    return <main className={'shell' + (view === 'monthly' ? ' monthly-shell' : '')}><header className="app-header"><div className="brand"><span className="brand-mark"><i /><i /><i /><i /></span><h1>개인 트래커</h1></div><div className="header-right"><InstallButton/><span>{today.getFullYear()}.{String(today.getMonth() + 1).padStart(2, '0')}.{String(today.getDate()).padStart(2, '0')} <b>{weekdays[(today.getDay() + 6) % 7]}요일</b></span><span inert={locked || undefined}><ThemeSwitch/></span></div></header>
  {error && <div className="error" role="alert">{error}{!locked && <button onClick={() => change(d => ({ ...d }))}>다시 저장</button>}</div>}
  <div className={'dashboard' + (view === 'monthly' ? ' monthly-dashboard' : '')} inert={locked || undefined}>{view === 'monthly' && <MonthlyHabitTracker data={data} change={change} today={today} month={month} setMonth={setMonth} weekly={() => { setView('weekly'); setWeek(monday(today)); }}/>}<div className="weekly-view" hidden={view !== 'weekly'}><WeeklyHabitTracker data={data} change={change} today={today} week={week} setWeek={setWeek} edit={setEditing} monthly={() => setView('monthly')}/><DateNavigation selected={selected} today={today} select={selectDate}/><div className="bottom"><TodoList key={selectedKey} data={data} change={change} today={selected} isToday={selectedKey === dateKey(today)}/><FreeNote text={data.dailyRecords[selectedKey]?.note || ''} change={change} selectedKey={selectedKey}/></div></div></div>
  <footer><span>나의 하루, 한 칸씩.</span><span className="save-status" role="status"><span className={saved ? 'saved-dot' : 'unsaved-dot'}/>{saved ? '이 기기에 자동 저장' : '저장되지 않음'}</span></footer>

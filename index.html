@@ -1,1 +1,48 @@
-<!doctype html><html lang="ko"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><meta name="theme-color" content="#151719"/><meta name="description" content="습관, 오늘 할 일, 메모를 한 화면에. 나만의 작은 개인 트래커."/><link rel="icon" type="image/svg+xml" href="/icon.svg"/><link rel="manifest" href="/manifest.webmanifest"/><script>try{document.documentElement.dataset.theme=localStorage.getItem('personal-tracker:theme')==='light'?'light':'dark';}catch{document.documentElement.dataset.theme='dark';}</script><title>개인 트래커</title></head><body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body></html>
+<!doctype html><html lang="ko"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><meta name="theme-color" content="#151719"/><meta name="description" content="습관, 오늘 할 일, 메모를 한 화면에. 나만의 작은 개인 트래커."/><link rel="icon" type="image/svg+xml" href="/icon.svg"/><link rel="manifest" href="/manifest.webmanifest"/><script>try{document.documentElement.dataset.theme=localStorage.getItem('personal-tracker:theme')==='light'?'light':'dark';}catch{document.documentElement.dataset.theme='dark';}</script><script>
+// Capture browser installation eligibility before the React bundle starts.
+(() => {
+  let deferred = null;
+  let installed = false;
+  let prompting = false;
+  const listeners = new Set();
+  const standalone = window.matchMedia('(display-mode: standalone)');
+  const isStandalone = () => standalone.matches || navigator.standalone === true;
+  const notify = () => listeners.forEach(listener => listener());
+  window.addEventListener('beforeinstallprompt', event => {
+    if (typeof event.prompt !== 'function') return;
+    event.preventDefault();
+    if (!installed && !isStandalone()) deferred = event;
+    notify();
+  });
+  window.addEventListener('appinstalled', () => {
+    installed = true;
+    deferred = null;
+    notify();
+  });
+  standalone.addEventListener('change', () => {
+    if (isStandalone()) deferred = null;
+    notify();
+  });
+  window.trackerInstall = {
+    subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); },
+    isReady() { return !!deferred && !installed && !prompting && !isStandalone(); },
+    async prompt() {
+      if (!this.isReady()) return;
+      const event = deferred;
+      deferred = null; // A browser installation event may only be prompted once.
+      prompting = true;
+      notify();
+      try {
+        await event.prompt(); // Invoked directly in the user's click activation.
+        const choice = await event.userChoice;
+        if (choice && choice.outcome === 'accepted') { installed = true; deferred = null; }
+      } catch {
+        // Wait for a fresh browser event instead of reusing a consumed prompt.
+      } finally {
+        prompting = false;
+        notify();
+      }
+    }
+  };
+})();
+</script><title>개인 트래커</title></head><body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body></html>
